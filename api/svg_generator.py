@@ -179,10 +179,10 @@ class SVGGenerator:
             </defs>
             
             <text x="{self.width//2}" y="{self.height//2 - 10}" class="idle-text">
-                🎵 No reproduciendo
+                ⏸️ Sin contenido
             </text>
             <text x="{self.width//2}" y="{self.height//2 + 15}" class="idle-subtitle">
-                Plex2Sign • Esperando actividad...
+                Sin actividad
             </text>
         </svg>
         '''

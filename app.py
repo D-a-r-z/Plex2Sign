@@ -357,7 +357,7 @@ def api_now_playing_png():
             logger.info("No hay sesión activa")
             # Generar imagen de "no reproduciendo"
             session_data = {
-                'title': 'No reproduciendo',
+                'title': 'Sin contenido',
                 'type': 'none',
                 'state': 'stopped',
                 'user': 'Unknown',
