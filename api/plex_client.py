@@ -129,8 +129,10 @@ class PlexClient:
             response = requests.get(api_url, headers=headers, timeout=10)
             response.raise_for_status()
             
-            data = response.json()
-            username = data.get('username')
+            # La API de Plex devuelve XML, no JSON
+            import xml.etree.ElementTree as ET
+            root = ET.fromstring(response.content)
+            username = root.get('username')
             logger.info(f"Usuario del token: {username}")
             return username
             
