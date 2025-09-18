@@ -1,16 +1,175 @@
 # 🎵 Plex2Sign
 
-**English** | [Español](#español)
+**[Español](#español)** | **[English](#english)**
 
 ---
 
-## 🚀 Live Demo
+## 🚀 Demo en Vivo
 
-**Deploy on Vercel**: https://plex2-sign.vercel.app/
+**Deploy en Vercel**: https://plex2-sign.vercel.app/
 
 ![Plex Now Playing](https://plex2-sign.vercel.app/api/now-playing-svg?theme=normal)
 
 ---
+
+# Español
+
+## 📋 Descripción
+
+Plex2Sign es un generador de firmas dinámicas que muestra el contenido multimedia que estás reproduciendo actualmente desde tu servidor Plex Media Server. Similar al popular [spotify-github-profile](https://github.com/kittinan/spotify-github-profile), pero diseñado específicamente para usuarios de Plex.
+
+Perfecto para:
+- 🐙 **README del Perfil de GitHub**
+- 💬 **Firmas de Foros**
+- 📱 **Integración en Redes Sociales**
+- 🎯 **Marca Personal**
+
+---
+
+## ✨ Características
+
+### 🎨 Múltiples Formatos
+- **SVG (Animado)**: Barras de ecualizador dinámicas con animaciones suaves
+- **PNG (Estático)**: Imágenes limpias y estáticas con visualización de ecualizador
+
+### 🌓 Soporte de Temas
+- **Normal**: Fondo blanco limpio con acentos azules
+- **Oscuro**: Fondo claro con texto oscuro para compatibilidad universal
+
+### 🎵 Tipos de Media
+- **Música**: Información de artista, álbum y canción con ecualizador animado
+- **Series de TV**: Título de la serie, temporada, episodio con ecualizador estático
+- **Películas**: Título de la película e información
+
+### 🔧 Características Técnicas
+- **Detección Automática del Servidor**: Usa la API de Plex Account para descubrir automáticamente el servidor externo
+- **Extracción Dinámica de Colores**: Extrae colores de las portadas de álbumes para barras de ecualizador personalizadas
+- **Manejo Inteligente de Texto**: Desplazamiento horizontal (marquee) para títulos largos
+- **Imágenes de Alta Calidad**: Procesamiento a 120x120px para visualización nítida a 80x80px
+- **Caché**: Caché eficiente de imágenes para reducir la carga del servidor
+
+---
+
+## 🛠️ Instalación
+
+### Requisitos
+- Token de Plex (obtenido desde https://support.plex.tv/articles/204059436/)
+- Client ID de Imgur (opcional, para hosting de imágenes)
+
+### Instalación
+
+1. **Clonar el repositorio**
+```bash
+git clone https://github.com/D-a-r-z/Plex2Sign.git
+cd Plex2Sign
+```
+
+2. **Instalar dependencias**
+```bash
+pip install -r requirements.txt
+```
+
+3. **Configurar variables de entorno**
+Crear un archivo `.env`:
+```env
+PLEX_TOKEN=tu_token_de_plex_aqui
+IMGUR_CLIENT_ID=tu_client_id_de_imgur_aqui
+```
+
+**📝 Filtrado automático de usuario:**
+La aplicación filtra automáticamente el contenido por el usuario asociado a tu token de Plex. Cada usuario solo verá su propio contenido por defecto.
+
+4. **Ejecutar localmente**
+```bash
+python app.py
+```
+
+Visita `http://localhost:5000` para ver el dashboard.
+
+---
+
+## 🌐 Despliegue
+
+### Vercel (Recomendado)
+
+1. **Hacer fork de este repositorio**
+2. **Conectar a Vercel**
+3. **Configurar variables de entorno**:
+   - `PLEX_TOKEN`: Tu token de Plex
+   - `IMGUR_CLIENT_ID`: Tu client ID de Imgur
+
+**🔒 Filtrado automático de usuario:**
+La aplicación filtra automáticamente el contenido por el usuario asociado a tu token de Plex. No se necesita configuración adicional.
+
+La aplicación detectará automáticamente la URL externa de tu servidor Plex usando la API de Plex Account.
+
+---
+
+## 📖 Uso
+
+### Perfil de GitHub
+
+Añade esto a tu README del perfil de GitHub:
+
+```markdown
+![Plex Now Playing](https://tu-url-vercel.vercel.app/api/now-playing-svg?theme=normal)
+```
+
+### Firmas de Foro
+
+Para fondos claros:
+```markdown
+![Plex Now Playing](https://tu-url-vercel.vercel.app/api/now-playing-svg?theme=dark)
+```
+
+### Endpoints Disponibles
+
+- **SVG (Animado)**:
+  - Normal: `/api/now-playing-svg?theme=normal`
+  - Oscuro: `/api/now-playing-svg?theme=dark`
+
+- **PNG (Estático)**:
+  - Normal: `/api/now-playing-png?theme=normal`
+  - Oscuro: `/api/now-playing-png?theme=dark`
+
+### Soporte Multi-Usuario
+
+Para deployments compartidos o filtrado de usuario específico:
+
+- **Con token específico**: `?token=tu_token_de_plex`
+- **Con usuario específico**: `?user=nombre_de_usuario`
+- **Combinado**: `?token=tu_token_de_plex&user=nombre_de_usuario`
+
+Ejemplo:
+```markdown
+![Plex Now Playing](https://tu-url-vercel.vercel.app/api/now-playing-svg?token=tu_token&user=tu_usuario)
+```
+
+---
+
+## 🤝 Agradecimientos
+
+- [kittinan/spotify-github-profile](https://github.com/kittinan/spotify-github-profile) - Inspiración y base del concepto
+- [novatorem.svg](https://github.com/kittinan/spotify-github-profile/blob/master/img/novatorem.svg) - Estilo de barras de ecualizador animadas
+- [PlexAPI](https://github.com/pkkid/python-plexapi) - Biblioteca Python para la API de Plex
+
+---
+
+## 📄 Licencia
+
+Este proyecto está bajo la Licencia MIT. Ver [LICENSE](LICENSE) para más detalles.
+
+---
+
+## 🔗 Enlaces
+
+- **GitHub**: https://github.com/D-a-r-z/Plex2Sign
+- **Demo en Vivo**: https://plex2-sign.vercel.app/
+- **Vercel Deploy**: [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/D-a-r-z/Plex2Sign)
+
+---
+
+# English
 
 ## 📋 Description
 
@@ -50,10 +209,8 @@ Perfect for:
 
 ## 🛠️ Setup
 
-### Prerequisites
-- Python 3.8+
-- Plex Media Server with Remote Access enabled
-- Plex Token
+### Requirements
+- Plex token (obtained from https://support.plex.tv/articles/204059436/)
 - Imgur Client ID (optional, for image hosting)
 
 ### Installation
@@ -149,178 +306,20 @@ Example:
 
 ## 🤝 Acknowledgments
 
-This project is inspired by and builds upon the excellent work of:
-
-- **[kittinan/spotify-github-profile](https://github.com/kittinan/spotify-github-profile)** - Original concept and design inspiration
-- **[novatorem.svg](https://github.com/kittinan/spotify-github-profile/blob/master/img/novatorem.svg)** - Equalizer bar animations and styling
-
-Special thanks to the Plex and Spotify communities for the inspiration!
+- [kittinan/spotify-github-profile](https://github.com/kittinan/spotify-github-profile) - Inspiration and base concept
+- [novatorem.svg](https://github.com/kittinan/spotify-github-profile/blob/master/img/novatorem.svg) - Animated equalizer bars style
+- [PlexAPI](https://github.com/pkkid/python-plexapi) - Python library for Plex API
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is under the MIT License. See [LICENSE](LICENSE) for more details.
 
 ---
 
 ## 🔗 Links
 
+- **GitHub**: https://github.com/D-a-r-z/Plex2Sign
 - **Live Demo**: https://plex2-sign.vercel.app/
-- **Issues**: [GitHub Issues](https://github.com/D-a-r-z/Plex2Sign/issues)
-- **Plex**: https://www.plex.tv/
-- **Vercel**: https://vercel.com/
-
----
-
----
-
-# Español
-
----
-
-## 📋 Descripción
-
-Plex2Sign es un generador dinámico de firmas que muestra el contenido multimedia que estás reproduciendo desde tu Plex Media Server. Similar al popular [spotify-github-profile](https://github.com/kittinan/spotify-github-profile), pero diseñado específicamente para usuarios de Plex.
-
-Perfecto para:
-- 🐙 **README de Perfil de GitHub**
-- 💬 **Firmas de Foros**
-- 📱 **Integración en Redes Sociales**
-- 🎯 **Marca Personal**
-
----
-
-## ✨ Características
-
-### 🎨 Múltiples Formatos
-- **SVG (Animado)**: Barras de ecualizador dinámicas con animaciones suaves
-- **PNG (Estático)**: Imágenes limpias y estáticas con visualización de ecualizador
-
-### 🌓 Soporte de Temas
-- **Normal**: Fondo blanco limpio con acentos azules
-- **Dark**: Fondo claro con texto oscuro para compatibilidad universal
-
-### 🎵 Tipos de Media
-- **Música**: Información de artista, álbum y canción con ecualizador animado
-- **Series**: Título de la serie, temporada, episodio con ecualizador estático
-- **Películas**: Título de la película e información
-
-### 🔧 Características Técnicas
-- **Detección Automática de Servidor**: Usa la API de Plex Account para descubrimiento automático del servidor externo
-- **Extracción Dinámica de Colores**: Extrae colores de las portadas para barras de ecualizador personalizadas
-- **Manejo Inteligente de Texto**: Desplazamiento horizontal (marquee) para títulos largos
-- **Imágenes de Alta Calidad**: Procesamiento a 120x120px para visualización nítida a 80x80px
-- **Caché**: Caché eficiente de imágenes para reducir la carga del servidor
-
----
-
-## 🛠️ Configuración
-
-### Prerrequisitos
-- Python 3.8+
-- Plex Media Server con Remote Access habilitado
-- Token de Plex
-- Client ID de Imgur (opcional, para hosting de imágenes)
-
-### Instalación
-
-1. **Clonar el repositorio**
-```bash
-git clone https://github.com/D-a-r-z/Plex2Sign.git
-cd Plex2Sign
-```
-
-2. **Instalar dependencias**
-```bash
-pip install -r requirements.txt
-```
-
-3. **Configurar variables de entorno**
-Crear un archivo `.env`:
-```env
-PLEX_TOKEN=tu_token_de_plex_aqui
-IMGUR_CLIENT_ID=tu_client_id_de_imgur_aqui
-```
-
-**📝 Filtrado automático de usuario:**
-La aplicación filtra automáticamente el contenido por el usuario asociado a tu token de Plex. Cada usuario solo verá su propio contenido por defecto.
-
-4. **Ejecutar localmente**
-```bash
-python app.py
-```
-
-Visita `http://localhost:5000` para ver el dashboard.
-
----
-
-## 🌐 Despliegue
-
-### Vercel (Recomendado)
-
-1. **Hacer fork de este repositorio**
-2. **Conectar a Vercel**
-3. **Configurar variables de entorno**:
-   - `PLEX_TOKEN`: Tu token de Plex
-   - `IMGUR_CLIENT_ID`: Tu client ID de Imgur
-
-**🔒 Filtrado automático de usuario:**
-La aplicación filtra automáticamente el contenido por el usuario asociado a tu token de Plex. No se necesita configuración adicional.
-
-La aplicación detectará automáticamente la URL externa de tu servidor Plex usando la API de Plex Account.
-
----
-
-## 📖 Uso
-
-### Perfil de GitHub
-
-Añade esto al README de tu perfil de GitHub:
-
-```markdown
-![Plex Now Playing](https://tu-url-vercel.vercel.app/api/now-playing-svg?theme=normal)
-```
-
-### Firmas de Foros
-
-Para fondos claros:
-```markdown
-![Plex Now Playing](https://tu-url-vercel.vercel.app/api/now-playing-svg?theme=dark)
-```
-
-### Endpoints Disponibles
-
-- **SVG (Animado)**:
-  - Normal: `/api/now-playing-svg?theme=normal`
-  - Dark: `/api/now-playing-svg?theme=dark`
-
-- **PNG (Estático)**:
-  - Normal: `/api/now-playing-png?theme=normal`
-  - Dark: `/api/now-playing-png?theme=dark`
-
----
-
-## 🤝 Agradecimientos
-
-Este proyecto está inspirado en y construido sobre el excelente trabajo de:
-
-- **[kittinan/spotify-github-profile](https://github.com/kittinan/spotify-github-profile)** - Concepto original e inspiración de diseño
-- **[novatorem.svg](https://github.com/kittinan/spotify-github-profile/blob/master/img/novatorem.svg)** - Animaciones y estilos de barras de ecualizador
-
-¡Gracias especiales a las comunidades de Plex y Spotify por la inspiración!
-
----
-
-## 📄 Licencia
-
-Este proyecto está licenciado bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para más detalles.
-
----
-
-## 🔗 Enlaces
-
-- **Demo en Vivo**: https://plex2-sign.vercel.app/
-- **Issues**: [GitHub Issues](https://github.com/D-a-r-z/Plex2Sign/issues)
-- **Plex**: https://www.plex.tv/
-- **Vercel**: https://vercel.com/
+- **Vercel Deploy**: [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/D-a-r-z/Plex2Sign)
