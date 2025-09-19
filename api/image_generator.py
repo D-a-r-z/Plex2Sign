@@ -163,8 +163,10 @@ class ImageGenerator:
                 draw.text((text_x, y_top_sub), artist_album, fill=theme['accent_color'], font=font_subtitle)
                 
                 # Barras estáticas (igual que dinámicas pero sin movimiento)
-                # Ajustado para coincidir con las nuevas posiciones: text_x=95
-                self._generate_static_bars(draw, text_x, 105, 287, theme)
+                # Posición ajustada: más arriba para que se vean mejor (height=90, posición en 82)
+                # Alineadas con el texto (mismo text_x y mismo ancho que el texto)
+                # Con fondo blur de la portada del álbum
+                self._generate_static_bars(draw, img, text_x + 2, 82, max_width, theme, thumbnail)
                 
             elif session_data['type'] == 'episode':
                 # Serie
@@ -290,12 +292,20 @@ class ImageGenerator:
         hex_color = hex_color.lstrip('#')
         return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
     
-    def _generate_static_bars(self, draw, start_x: int, start_y: int, width: int, theme: dict) -> None:
-        """Genera barras de ecualizador estáticas (igual que SVG pero sin movimiento)"""
-        # Parámetros exactos del SVG
-        bar_count = 71  # Mismo que SVG
-        bar_width = 3   # Mismo que SVG
-        bar_spacing = 1
+    def _generate_static_bars(self, draw, img, start_x: int, start_y: int, width: int, theme: dict, thumbnail=None) -> None:
+        """Genera barras de ecualizador estáticas con fondo del color dominante del álbum"""
+        # Parámetros ajustados para mejor visualización
+        bar_width = 2   # Ancho reducido a 2px para barras más finas
+        bar_spacing = 1 # Separación de 1px
+        
+        # Usar el ancho que se pasa como parámetro (mismo que el texto)
+        max_total_width = width
+        
+        # Calcular cuántas barras caben en el ancho disponible
+        # Cada barra ocupa: bar_width + bar_spacing, excepto la última que no tiene spacing
+        bar_count = (max_total_width + bar_spacing) // (bar_width + bar_spacing)
+        # Añadir 2 barras más para ocupar mejor el espacio
+        bar_count += 2
         total_bar_width = bar_count * (bar_width + bar_spacing) - bar_spacing
         
         # Centrar las barras en el ancho disponible
@@ -304,22 +314,75 @@ class ImageGenerator:
         # Generar alturas aleatorias pero consistentes (mismo seed para consistencia)
         import random
         random.seed(42)  # Seed fijo para que siempre sean las mismas alturas
-        bar_heights = [random.randint(3, 20) for _ in range(bar_count)]
+        bar_heights = [random.randint(3, 22) for _ in range(bar_count)]
         
-        # Color de las barras (usar accent_color del tema)
-        bar_color = self._hex_to_rgb(theme['accent_color'])
+        # Crear fondo blur de la portada para las barras
+        background_blur = None
+        if thumbnail:
+            try:
+                from PIL import ImageFilter, Image
+                
+                # Crear una versión estirada y con blur de la portada
+                # Redimensionar para cubrir toda el área de las barras
+                bg_width = total_bar_width
+                bg_height = max(bar_heights)
+                
+                # Estirar la imagen para cubrir el área de las barras
+                # Asegurarse de que la orientación sea correcta
+                background = thumbnail.copy()
+                background = background.resize((bg_width, bg_height), Image.Resampling.LANCZOS)
+                
+                # Aplicar blur/bloom effect más sutil
+                background_blur = background.filter(ImageFilter.GaussianBlur(radius=3))
+                
+                # Reducir opacidad para que no sea muy intenso
+                background_blur = background_blur.convert('RGBA')
+                # Ajustar la opacidad de toda la imagen
+                alpha_data = []
+                for pixel in background_blur.getdata():
+                    # Mantener RGB pero reducir alpha a 150 (60% opacidad)
+                    alpha_data.append((pixel[0], pixel[1], pixel[2], 150))
+                background_blur.putdata(alpha_data)
+                
+                logger.info(f"Fondo blur creado: {bg_width}x{bg_height}")
+                
+            except Exception as e:
+                logger.warning(f"Error creando fondo blur: {e}")
+                background_blur = None
         
-        # Dibujar cada barra
+        # Dibujar cada barra individual con fondo blur como máscara
         for i in range(bar_count):
             bar_x = bars_start_x + i * (bar_width + bar_spacing)
             bar_height = bar_heights[i]
             bar_y = start_y - bar_height  # Crecer hacia arriba desde la base
             
-            # Dibujar barra (rectángulo)
-            draw.rectangle(
-                [bar_x, bar_y, bar_x + bar_width, start_y],
-                fill=bar_color
-            )
+            if background_blur:
+                # Recortar la parte del fondo blur que corresponde a esta barra
+                crop_x = bar_x - bars_start_x
+                crop_y = 0  # Empezar desde arriba del fondo blur
+                crop_box = (crop_x, crop_y, crop_x + bar_width, bar_height)
+                
+                try:
+                    # Recortar la porción del fondo blur para esta barra
+                    bar_bg = background_blur.crop(crop_box)
+                    # Pegar solo esta porción en la posición de la barra
+                    img.paste(bar_bg, (bar_x, bar_y), bar_bg)
+                    logger.info(f"Barra {i}: pegando blur en ({bar_x}, {bar_y})")
+                except Exception as e:
+                    logger.warning(f"Error aplicando blur a barra {i}: {e}")
+                    # Fallback: dibujar barra normal
+                    bar_color = self._hex_to_rgb(theme['accent_color'])
+                    draw.rectangle(
+                        [bar_x, bar_y, bar_x + bar_width, start_y],
+                        fill=bar_color
+                    )
+            else:
+                # Fallback al color del tema si no hay fondo blur
+                bar_color = self._hex_to_rgb(theme['accent_color'])
+                draw.rectangle(
+                    [bar_x, bar_y, bar_x + bar_width, start_y],
+                    fill=bar_color
+                )
     
     def _generate_error_png(self, session_data: Optional[Dict[str, Any]]) -> io.BytesIO:
         """

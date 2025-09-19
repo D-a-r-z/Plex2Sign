@@ -264,8 +264,19 @@ class PlexClient:
                     return None
                 
                 # Formatear como sesión de música
+                # Obtener título de la canción (priorizar trackTitle sobre title)
+                track_title = getattr(recent_item, 'trackTitle', None)
+                item_title = getattr(recent_item, 'title', 'Canción desconocida')
+                
+                
+                if not track_title:
+                    track_title = item_title
+                
+                
+                
                 history_data = {
-                    'title': getattr(recent_item, 'title', 'Canción desconocida'),
+                    'title': track_title,  # Usar el título correcto
+                    'track_title': track_title,  # También asignar a track_title
                     'type': 'track',  # Asumir música para historial
                     'state': 'stopped',  # Historial siempre está parado
                     'user': target_user,
@@ -301,9 +312,6 @@ class PlexClient:
                         history_data['album'] = 'Álbum desconocido'
                 except:
                     history_data['album'] = 'Álbum desconocido'
-                
-                if hasattr(recent_item, 'trackTitle'):
-                    history_data['track_title'] = recent_item.trackTitle
                 
                 # URLs de imágenes (para música usar art, no thumb)
                 logger.info(f"Campos de imagen disponibles: art={getattr(recent_item, 'art', None)}, thumb={getattr(recent_item, 'thumb', None)}")

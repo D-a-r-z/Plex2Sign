@@ -36,8 +36,8 @@ class SVGGenerator:
         return {
             'normal': {
                 'bg_color': '#ffffff',
-                'text_color': '#2d3748',
-                'accent_color': '#3182ce',
+                'text_color': '#ffffff',      # Título en blanco
+                'accent_color': '#a0a0a0',   # Subtítulo en gris
                 'progress_bg': 'transparent',
                 'progress_fg': '#3182ce',
                 'font_family': 'Arial, sans-serif',
@@ -201,6 +201,7 @@ class SVGGenerator:
         track_title = data.get('track_title', data.get('title', 'Canción desconocida'))
         artist = data.get('artist', 'Artista desconocido')
         album = data.get('album', 'Álbum desconocido')
+        
         
         # Calcular si necesita marquee según longitud
         artist_album_text = f"{artist} • {album}"

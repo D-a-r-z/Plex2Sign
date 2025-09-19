@@ -51,17 +51,21 @@ def index():
                 background: #0d1117; color: #f0f6fc;
             }
             .card { 
-                background: #161b22; border-radius: 8px; padding: 15px; margin: 8px 0;
-                border: 1px solid #30363d;
+                background: #161b22; border-radius: 12px; padding: 15px; margin: 15px 0;
+                border: 1px solid #9C27B0;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.3);
             }
             .status { padding: 8px; border-radius: 4px; margin: 8px 0; }
-            .success { background: #238636; color: white; }
+            .success { background: #161b22; color: white; }
             .error { background: #da3633; color: white; }
             .warning { background: #bf8700; color: white; }
             code { background: #21262d; padding: 2px 4px; border-radius: 3px; color: #f0f6fc; font-size: 0.9em; }
-            a { color: #58a6ff; text-decoration: none; }
+            a { color: #9C27B0; text-decoration: none; }
             a:hover { text-decoration: underline; }
+            h1 { margin-top: 0; margin-bottom: 16px; }
+            h2 { margin-top: 0; margin-bottom: 18px; }
+            h3 { margin-top: 16px; margin-bottom: 8px; }
+            p { margin-top: 4px; margin-bottom: 4px; }
             img { 
                 max-width: 100%; 
                 border-radius: 6px; 
@@ -73,7 +77,8 @@ def index():
     </head>
     <body>
         <h1>🎵 Plex2Sign</h1>
-        <p>Muestra lo que estás reproduciendo en Plex en tu perfil de GitHub</p>
+        <p>Utilidad para generar imágenes dinámicas y estáticas de tu reproducción actual de Plex. Perfecta para perfiles de GitHub, foros, webs y redes sociales.</p>
+        <p><small>Basado en <a href="https://github.com/kittinan/spotify-github-profile" target="_blank">spotify-github-profile</a> de kittinan y los estilos de barras de <a href="https://github.com/novatorem/novatorem" target="_blank">Novatorem</a>. Originalmente creado para GitHub, pero expandido para múltiples usos.</small></p>
         
         <div class="card">
             <h2>📊 Estado del Sistema</h2>
@@ -91,8 +96,8 @@ def index():
             
             <h3>SVG (Animado)</h3>
             <div style="margin: 2px 0;">
-                <p style="margin: 2px 0;"><strong>Normal SVG</strong> - Con ecualizador animado</p>
-                <img src="/api/now-playing-svg?theme=normal&height=90" alt="Normal SVG" style="max-width: 400px;" />
+                <p style="margin: 2px 0;"><strong>Light SVG</strong> - Tema claro con ecualizador animado</p>
+                <img src="/api/now-playing-svg?theme=normal&height=90" alt="Light SVG" style="max-width: 400px;" />
                 <br><small><a href="/api/now-playing-svg?theme=normal&height=90">Ver enlace directo</a></small>
             </div>
             
@@ -104,18 +109,18 @@ def index():
             
             <h3>PNG (Estático)</h3>
             <div style="margin: 2px 0;">
-                <p style="margin: 2px 0;"><strong>Normal PNG</strong> - Diseño limpio con fondo blanco</p>
-                <img src="/api/now-playing-png?theme=normal" alt="Normal PNG" style="max-width: 400px;" />
+                <p style="margin: 2px 0;"><strong>Light PNG</strong> - Tema claro con barras estáticas</p>
+                <img src="/api/now-playing-png?theme=normal" alt="Light PNG" style="max-width: 400px;" />
                 <br><small><a href="/api/now-playing-png?theme=normal">Ver enlace directo</a></small>
             </div>
             
             <div style="margin: 2px 0;">
-                <p style="margin: 2px 0;"><strong>Dark PNG</strong> - Tema oscuro para foros claros y oscuros</p>
+                <p style="margin: 2px 0;"><strong>Dark PNG</strong> - Tema oscuro con barras estáticas</p>
                 <img src="/api/now-playing-png?theme=dark" alt="Dark PNG" style="max-width: 400px;" />
                 <br><small><a href="/api/now-playing-png?theme=dark">Ver enlace directo</a></small>
             </div>
             
-            <p><small>💡 Otros temas (default, dark, compact) disponibles en el código para activar cuando sea necesario.</small></p>
+            <p style="margin-top: 20px;"><small>💡 Se irán agregando otros diseños según se vayan probando.</small></p>
         </div>
         
         <script>
