@@ -77,11 +77,11 @@ class ImageGenerator:
             themes = svg_gen._load_themes()
             theme = themes[self.theme]
             
-            # Posiciones exactas del SVG
+            # Posiciones exactas del SVG (actualizadas para coincidir)
             thumb_size = 80
-            thumb_x = 10
-            thumb_y = 35
-            text_x = 100  # Gap de 20px como en SVG
+            thumb_x = 5   # Igual que SVG: x="5"
+            thumb_y = 5   # Igual que SVG: y="5" 
+            text_x = 95   # Igual que SVG: x="95" (gap de 10px como en SVG)
             
             # Descargar y procesar thumbnail
             thumbnail = None
@@ -121,18 +121,18 @@ class ImageGenerator:
                 # Arial: Bold para títulos, Normal para subtítulos
                 font_bold_path = os.path.join(os.path.dirname(__file__), "../assets/fonts/ARIALBD.TTF")
                 font_normal_path = os.path.join(os.path.dirname(__file__), "../assets/fonts/ARIAL.TTF")
-                font_title = ImageFont.truetype(font_bold_path, 15)  # SVG: font_size_title: '15px' (BOLD)
-                font_subtitle = ImageFont.truetype(font_normal_path, 12)  # SVG: font_size_subtitle: '12px' (NORMAL)
+                font_title = ImageFont.truetype(font_bold_path, 14)  # SVG: 15px -> PNG: 14px (BOLD)
+                font_subtitle = ImageFont.truetype(font_normal_path, 11)  # SVG: 12px -> PNG: 11px (NORMAL)
             except:
                 try:
                     # Fallback a Arial del sistema
-                    font_title = ImageFont.truetype("arial.ttf", 15)
-                    font_subtitle = ImageFont.truetype("arial.ttf", 12)
+                    font_title = ImageFont.truetype("arial.ttf", 14)
+                    font_subtitle = ImageFont.truetype("arial.ttf", 11)
                 except:
                     try:
                         # Fallback a fuentes del sistema Windows
-                        font_title = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 15)
-                        font_subtitle = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 12)
+                        font_title = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 14)
+                        font_subtitle = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 11)
                     except:
                         # Último fallback
                         font_title = ImageFont.load_default()
@@ -151,21 +151,20 @@ class ImageGenerator:
                 artist_album = self._truncate_text(draw, f"{artist} • {album}", font_subtitle, max_width)
                 
                 # Dibujar texto (baseline correcto, igual que SVG)
-                # SVG: y="50" y y="70" (baseline) -> PNG: calcular top desde baseline
+                # SVG: y="16" y y="36" (baseline) -> PNG: calcular top desde baseline
                 ascent_title, descent_title = font_title.getmetrics()
-                y_baseline_title = 50
+                y_baseline_title = 16  # Igual que SVG
                 y_top_title = y_baseline_title - ascent_title
                 draw.text((text_x, y_top_title), track_title, fill=theme['text_color'], font=font_title)
                 
                 ascent_sub, descent_sub = font_subtitle.getmetrics()
-                y_baseline_sub = 70
+                y_baseline_sub = 36  # Igual que SVG
                 y_top_sub = y_baseline_sub - ascent_sub
                 draw.text((text_x, y_top_sub), artist_album, fill=theme['accent_color'], font=font_subtitle)
                 
                 # Barras estáticas (igual que dinámicas pero sin movimiento)
-                # Ajustado para coincidir exactamente con SVG: start_y = 85
-                # Pero movemos más abajo para evitar solapamiento con subtítulo
-                self._generate_static_bars(draw, 100, 105, 287, theme)
+                # Ajustado para coincidir con las nuevas posiciones: text_x=95
+                self._generate_static_bars(draw, text_x, 105, 287, theme)
                 
             elif session_data['type'] == 'episode':
                 # Serie
@@ -178,14 +177,14 @@ class ImageGenerator:
                 show_info = self._truncate_text(draw, f"{show_title} • S{season:02d}E{episode:02d}", font_title, max_width)
                 episode_info = self._truncate_text(draw, episode_title, font_subtitle, max_width)
                 
-                # Baseline correcto para series
+                # Baseline correcto para series (igual que SVG)
                 ascent_title, descent_title = font_title.getmetrics()
-                y_baseline_title = 50
+                y_baseline_title = 16  # Igual que SVG
                 y_top_title = y_baseline_title - ascent_title
                 draw.text((text_x, y_top_title), show_info, fill=theme['text_color'], font=font_title)
                 
                 ascent_sub, descent_sub = font_subtitle.getmetrics()
-                y_baseline_sub = 70
+                y_baseline_sub = 36  # Igual que SVG
                 y_top_sub = y_baseline_sub - ascent_sub
                 draw.text((text_x, y_top_sub), episode_info, fill=theme['accent_color'], font=font_subtitle)
                 
@@ -197,15 +196,15 @@ class ImageGenerator:
                 max_width = self.width - text_x - 10
                 title_text = self._truncate_text(draw, title, font_title, max_width)
                 
-                # Baseline correcto para películas
+                # Baseline correcto para películas (igual que SVG)
                 ascent_title, descent_title = font_title.getmetrics()
-                y_baseline_title = 50
+                y_baseline_title = 16  # Actualizado para coincidir con SVG
                 y_top_title = y_baseline_title - ascent_title
                 draw.text((text_x, y_top_title), title_text, fill=theme['text_color'], font=font_title)
                 
                 if year:
                     ascent_sub, descent_sub = font_subtitle.getmetrics()
-                    y_baseline_sub = 70
+                    y_baseline_sub = 36  # Actualizado para coincidir con SVG
                     y_top_sub = y_baseline_sub - ascent_sub
                     draw.text((text_x, y_top_sub), str(year), fill=theme['accent_color'], font=font_subtitle)
             

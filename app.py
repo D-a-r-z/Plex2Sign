@@ -206,7 +206,7 @@ def api_now_playing():
         # Parámetros de la petición
         theme = request.args.get('theme', os.getenv('DEFAULT_THEME', 'normal'))
         width = int(request.args.get('width', os.getenv('IMAGE_WIDTH', 400)))
-        height = int(request.args.get('height', os.getenv('IMAGE_HEIGHT', 90)))
+        height = int(request.args.get('height', 90))  # Forzado a 90, ignorando IMAGE_HEIGHT
         force_refresh = request.args.get('refresh', 'false').lower() == 'true'
         
         # Verificar cache
@@ -331,7 +331,7 @@ def api_now_playing_svg():
         # Parámetros de la petición
         theme = request.args.get('theme', os.getenv('DEFAULT_THEME', 'normal'))
         width = int(request.args.get('width', os.getenv('IMAGE_WIDTH', 400)))
-        height = int(request.args.get('height', os.getenv('IMAGE_HEIGHT', 90)))
+        height = int(request.args.get('height', 90))  # Forzado a 90, ignorando IMAGE_HEIGHT
         
         # Obtener datos de Plex
         token = request.args.get('token')
@@ -382,7 +382,7 @@ def api_now_playing_png():
         # Parámetros de la petición
         theme = request.args.get('theme', os.getenv('DEFAULT_THEME', 'normal'))
         width = int(request.args.get('width', os.getenv('IMAGE_WIDTH', 400)))
-        height = int(request.args.get('height', os.getenv('IMAGE_HEIGHT', 90)))
+        height = int(request.args.get('height', 90))  # Forzado a 90, ignorando IMAGE_HEIGHT
         
         # Obtener cliente Plex
         token = request.args.get('token')
@@ -415,11 +415,12 @@ def api_now_playing_png():
                 session_data = None
         
         # Generar imagen PNG
+        logger.info(f"Generando PNG con dimensiones: {width}x{height}")
         image_generator = ImageGenerator(theme=theme, width=width, height=height)
         image_buffer = image_generator.generate_now_playing_image(session_data)
         image_bytes = image_buffer.getvalue()  # Convertir BytesIO a bytes
         
-        logger.info(f"PNG generado exitosamente - Tema: {theme}, Tamaño: {len(image_bytes)} bytes")
+        logger.info(f"PNG generado exitosamente - Tema: {theme}, Dimensiones: {width}x{height}, Tamaño: {len(image_bytes)} bytes")
         
         return Response(
             image_bytes,

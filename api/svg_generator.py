@@ -396,13 +396,22 @@ class SVGGenerator:
             {f'<image x="5" y="5" width="80" height="80" href="{thumbnail_data}" />' if thumbnail_data else ''}
             {f'<text x="50" y="85" text-anchor="middle" style="font-size: 24px;">📺</text>' if not thumbnail_data else ''}
             
-            <!-- Información del episodio -->
-            <text x="95" y="50" class="show-title">
-                {self._escape_xml(self._truncate_text(f"{show_title} • S{season:02d}E{episode:02d}", 55))}
-            </text>
-            <text x="95" y="70" class="episode-info">
-                {self._escape_xml(self._truncate_text(episode_title, 30))}
-            </text>
+            <!-- Área de recorte para texto (igual que música) -->
+            <defs>
+                <clipPath id="textClipTV">
+                    <rect x="95" y="5" width="300" height="80"/>
+                </clipPath>
+            </defs>
+            
+            <!-- Información del episodio con posiciones iguales a música -->
+            <g clip-path="url(#textClipTV)">
+                <text x="95" y="16" class="show-title">
+                    {self._escape_xml(self._truncate_text(f"{show_title} • S{season:02d}E{episode:02d}", 55))}
+                </text>
+                <text x="95" y="36" class="episode-info">
+                    {self._escape_xml(self._truncate_text(episode_title, 30))}
+                </text>
+            </g>
             
             <!-- Ecualizador estilo Spotify (solo cuando reproduce) -->
             {self._generate_enhanced_equalizer_bars(theme, is_playing, 95, 56, extracted_colors, 300)}
@@ -517,7 +526,7 @@ class SVGGenerator:
             # Abrir imagen con PIL
             image = Image.open(io.BytesIO(response.content))
             
-            # Redimensionar manteniendo aspect ratio y centrando
+            # Redimensionar manteniendo aspect ratio y centrando (método original)
             image.thumbnail(target_size, Image.Resampling.LANCZOS)
             
             # Crear imagen cuadrada con fondo transparente si es necesario
@@ -529,24 +538,42 @@ class SVGGenerator:
                 new_image.paste(image, (paste_x, paste_y))
                 image = new_image
             
-            # Procesar imagen para quitar fondo blanco
+            # Procesar imagen para quitar fondo blanco de forma inteligente
             if image.mode != 'RGBA':
                 image = image.convert('RGBA')
             
-            # Obtener datos de píxeles
-            data = image.getdata()
-            new_data = []
-            
-            # Procesar cada píxel
-            for item in data:
-                # Si el píxel es blanco o muy claro, hacerlo transparente
-                if item[0] > 240 and item[1] > 240 and item[2] > 240:
-                    new_data.append((255, 255, 255, 0))  # Transparente
-                else:
-                    new_data.append(item)
-            
-            # Aplicar los nuevos datos
-            image.putdata(new_data)
+            # Solo procesar si la imagen es más grande que el tamaño objetivo (tiene padding)
+            # Para imágenes 80x80 (música) no procesar, para imágenes más grandes (películas/series) sí
+            if image.size[0] > target_size[0] or image.size[1] > target_size[1]:
+                # Obtener datos de píxeles
+                data = image.getdata()
+                new_data = []
+                
+                # Calcular área central que debe preservarse
+                width, height = image.size
+                center_x = width // 2
+                center_y = height // 2
+                preserve_radius = min(width, height) // 3  # Radio de área a preservar
+                
+                # Procesar cada píxel
+                for y in range(height):
+                    for x in range(width):
+                        item = data[y * width + x]
+                        
+                        # Calcular distancia al centro
+                        distance_to_center = ((x - center_x) ** 2 + (y - center_y) ** 2) ** 0.5
+                        
+                        # Si está en el área central, preservar siempre
+                        if distance_to_center <= preserve_radius:
+                            new_data.append(item)
+                        # Si está fuera del área central y es blanco, hacer transparente
+                        elif item[0] > 240 and item[1] > 240 and item[2] > 240:
+                            new_data.append((255, 255, 255, 0))  # Transparente
+                        else:
+                            new_data.append(item)
+                
+                # Aplicar los nuevos datos
+                image.putdata(new_data)
             
             # Convertir a base64 con fondo transparente
             buffer = io.BytesIO()
@@ -613,20 +640,60 @@ class SVGGenerator:
             ]
     
     def _create_dynamic_gradient(self, colors: List[Tuple[int, int, int]], gradient_id: str) -> str:
-        """Crea degradado dinámico basado en colores extraídos"""
+        """Crea degradado dinámico con mejor distribución de colores"""
         gradient_def = f'''
         <linearGradient id="{gradient_id}" x1="0%" y1="0%" x2="100%" y2="0%">
         '''
         
-        # Crear stops del degradado con los colores extraídos
-        for i, color in enumerate(colors):
-            offset = (i * 100) // (len(colors) - 1) if len(colors) > 1 else 0
+        # Crear más stops para mejor distribución de colores
+        # Usar 8 stops en lugar de 4 para distribución más uniforme
+        num_stops = 8
+        color_index = 0
+        
+        for i in range(num_stops):
+            # Calcular offset más distribuido
+            offset = (i * 100) // (num_stops - 1)
+            
+            # Seleccionar color (distribuir mejor los colores del álbum)
+            if i == 0:
+                # Primer stop: primer color
+                color = colors[0]
+            elif i == num_stops - 1:
+                # Último stop: último color
+                color = colors[-1]
+            elif i < num_stops // 2:
+                # Primera mitad: mezclar primeros colores
+                if len(colors) >= 2:
+                    # Interpolar entre color 1 y 2
+                    ratio = (i - 1) / (num_stops // 2 - 1)
+                    color1 = colors[0]
+                    color2 = colors[1] if len(colors) > 1 else colors[0]
+                    color = self._interpolate_color(color1, color2, ratio)
+                else:
+                    color = colors[0]
+            else:
+                # Segunda mitad: mezclar últimos colores
+                if len(colors) >= 4:
+                    # Interpolar entre color 3 y 4
+                    ratio = (i - num_stops // 2) / (num_stops // 2 - 1)
+                    color1 = colors[2] if len(colors) > 2 else colors[-1]
+                    color2 = colors[3] if len(colors) > 3 else colors[-1]
+                    color = self._interpolate_color(color1, color2, ratio)
+                elif len(colors) >= 3:
+                    # Interpolar entre color 2 y 3
+                    ratio = (i - num_stops // 2) / (num_stops // 2 - 1)
+                    color1 = colors[1]
+                    color2 = colors[2]
+                    color = self._interpolate_color(color1, color2, ratio)
+                else:
+                    color = colors[-1]
+            
             rgb = f"rgb({color[0]}, {color[1]}, {color[2]})"
             
-            # Crear animación de colores que rota entre todos los colores
+            # Crear animación de colores que rota entre todos los colores originales
             color_values = []
             for j in range(len(colors)):
-                next_color = colors[(i + j) % len(colors)]
+                next_color = colors[j]
                 color_values.append(f"rgb({next_color[0]}, {next_color[1]}, {next_color[2]})")
             color_values.append(color_values[0])  # Volver al inicio
             
@@ -634,7 +701,7 @@ class SVGGenerator:
             <stop offset="{offset}%" style="stop-color:{rgb};stop-opacity:1">
                 <animate attributeName="stop-color" 
                          values="{';'.join(color_values)}" 
-                         dur="15s" 
+                         dur="10s" 
                          repeatCount="indefinite"/>
             </stop>
             '''
@@ -644,3 +711,10 @@ class SVGGenerator:
         '''
         
         return gradient_def
+    
+    def _interpolate_color(self, color1: Tuple[int, int, int], color2: Tuple[int, int, int], ratio: float) -> Tuple[int, int, int]:
+        """Interpola entre dos colores RGB"""
+        r = int(color1[0] + (color2[0] - color1[0]) * ratio)
+        g = int(color1[1] + (color2[1] - color1[1]) * ratio)
+        b = int(color1[2] + (color2[2] - color1[2]) * ratio)
+        return (r, g, b)
