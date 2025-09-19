@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class SVGGenerator:
     """Generador de SVG animados para mostrar información de reproducción"""
     
-    def __init__(self, width: int = 400, height: int = 150, theme: str = 'minimal'):
+    def __init__(self, width: int = 400, height: int = 90, theme: str = 'minimal'):
         """
         Inicializa el generador de SVG
         
@@ -41,8 +41,8 @@ class SVGGenerator:
                 'progress_bg': 'transparent',
                 'progress_fg': '#3182ce',
                 'font_family': 'Arial, sans-serif',
-                'font_size_title': '15px',
-                'font_size_subtitle': '12px',
+                'font_size_title': '14px',
+                'font_size_subtitle': '11px',
                 'font_size_time': '10px',
             },
             'dark': {
@@ -52,8 +52,8 @@ class SVGGenerator:
                 'progress_bg': 'transparent',
                 'progress_fg': '#343a40',   # Mismo gris más oscuro
                 'font_family': 'Arial, sans-serif',
-                'font_size_title': '15px',
-                'font_size_subtitle': '12px',
+                'font_size_title': '14px',
+                'font_size_subtitle': '11px',
                 'font_size_time': '10px',
             },
             'default': {
@@ -63,8 +63,8 @@ class SVGGenerator:
                 'progress_bg': 'transparent',
                 'progress_fg': '#3182ce',
                 'font_family': 'Arial, sans-serif',
-                'font_size_title': '15px',
-                'font_size_subtitle': '12px',
+                'font_size_title': '14px',
+                'font_size_subtitle': '11px',
                 'font_size_time': '10px',
             },
             # Alias para compatibilidad
@@ -75,8 +75,8 @@ class SVGGenerator:
                 'progress_bg': 'transparent',
                 'progress_fg': '#3182ce',
                 'font_family': 'Arial, sans-serif',
-                'font_size_title': '15px',
-                'font_size_subtitle': '12px',
+                'font_size_title': '14px',
+                'font_size_subtitle': '11px',
                 'font_size_time': '10px',
             },
             'light': {
@@ -86,8 +86,8 @@ class SVGGenerator:
                 'progress_bg': 'transparent',
                 'progress_fg': '#343a40',
                 'font_family': 'Arial, sans-serif',
-                'font_size_title': '15px',
-                'font_size_subtitle': '12px',
+                'font_size_title': '14px',
+                'font_size_subtitle': '11px',
                 'font_size_time': '10px',
             },
             # Otros temas disponibles (comentados por ahora)
@@ -136,8 +136,13 @@ class SVGGenerator:
         Returns:
             String con el SVG generado
         """
-        if not session_data or session_data.get('state') == 'stopped':
+        if not session_data:
+            logger.info("SVG: session_data es None, generando SVG idle")
             return self._generate_idle_svg()
+        
+        # Si es historial (state='stopped'), mostrarlo como música
+        if session_data.get('state') == 'stopped' and session_data.get('type') == 'track':
+            return self._generate_music_svg(session_data)
         
         # Generar SVG según el tipo de contenido
         if session_data['type'] == 'track':
@@ -199,13 +204,13 @@ class SVGGenerator:
         
         # Calcular si necesita marquee según longitud
         artist_album_text = f"{artist} • {album}"
-        max_chars_visible = 45  # Caracteres que caben sin scroll
+        max_chars_visible = 41  # Caracteres que caben sin scroll
         
-        # Con 450px de ancho, podemos mostrar más texto sin marquee
-        max_chars_visible = 55  # Límite uniforme para música y series
+        # Con 400px de ancho, podemos mostrar más texto sin marquee
+        max_chars_visible = 41  # Límite ajustado para fuente de 14px
         
         # Barras ocupan TODO el ancho disponible (400px total)
-        bar_area_width = 287  # 400px - 80px portada - 20px gap - 13px margen = 287px
+        bar_area_width = 300  # 400px - 80px portada - 20px gap = 300px
         
         # Determinar si necesita animación marquee
         title_needs_marquee = len(track_title) > max_chars_visible
@@ -280,31 +285,31 @@ class SVGGenerator:
             </defs>
             
             <!-- Thumbnail placeholder o imagen -->
-            <rect x="10" y="35" width="80" height="80" rx="8" fill="{theme['progress_bg']}" opacity="0.2"/>
-            {f'<image x="10" y="35" width="80" height="80" href="{thumbnail_data}" />' if thumbnail_data else ''}
+            <rect x="5" y="5" width="80" height="80" rx="8" fill="{theme['progress_bg']}" opacity="0.2"/>
+            {f'<image x="5" y="5" width="80" height="80" href="{thumbnail_data}" />' if thumbnail_data else ''}
             {f'<text x="50" y="85" text-anchor="middle" style="font-size: 24px;">🎵</text>' if not thumbnail_data else ''}
             
             <!-- Área de recorte para texto (más ancha con 450px) -->
             <defs>
                 <clipPath id="textClip">
-                    <rect x="100" y="35" width="287" height="50"/>
+                    <rect x="95" y="5" width="300" height="80"/>
                 </clipPath>
             </defs>
             
             <!-- Información de la canción con marquee inteligente -->
             <g clip-path="url(#textClip)">
-                <text x="100" y="50" class="song-title fade-in">
+                <text x="95" y="16" class="song-title fade-in">
                     {self._escape_xml(track_title)}
-                    {f'<animate attributeName="x" values="100;{100 - len(track_title) * 4 + 100};100" dur="12s" repeatCount="indefinite"/>' if title_needs_marquee else ''}
+                    {f'<animate attributeName="x" values="95;{95 - len(track_title) * 4 + 95};95" dur="12s" repeatCount="indefinite"/>' if title_needs_marquee else ''}
                 </text>
-                <text x="100" y="70" class="song-info fade-in">
+                <text x="95" y="36" class="song-info fade-in">
                     {self._escape_xml(artist_album_text)}
-                    {f'<animate attributeName="x" values="100;{100 - len(artist_album_text) * 4 + 100};100" dur="15s" repeatCount="indefinite"/>' if artist_needs_marquee else ''}
+                    {f'<animate attributeName="x" values="95;{95 - len(artist_album_text) * 4 + 95};95" dur="15s" repeatCount="indefinite"/>' if artist_needs_marquee else ''}
                 </text>
             </g>
             
             <!-- Ecualizador estilo Spotify (solo cuando reproduce) -->
-            {self._generate_enhanced_equalizer_bars(theme, is_playing, 100, 85, extracted_colors, 287)}
+            {self._generate_enhanced_equalizer_bars(theme, is_playing, 95, 56, extracted_colors, 300)}
             
         </svg>
         '''
@@ -387,20 +392,20 @@ class SVGGenerator:
             </defs>
             
             <!-- Thumbnail placeholder o imagen -->
-            <rect x="10" y="35" width="80" height="80" rx="8" fill="transparent" opacity="0.0"/>
-            {f'<image x="10" y="35" width="80" height="80" href="{thumbnail_data}" />' if thumbnail_data else ''}
+            <rect x="5" y="5" width="80" height="80" rx="8" fill="transparent" opacity="0.0"/>
+            {f'<image x="5" y="5" width="80" height="80" href="{thumbnail_data}" />' if thumbnail_data else ''}
             {f'<text x="50" y="85" text-anchor="middle" style="font-size: 24px;">📺</text>' if not thumbnail_data else ''}
             
             <!-- Información del episodio -->
-            <text x="100" y="50" class="show-title">
+            <text x="95" y="50" class="show-title">
                 {self._escape_xml(self._truncate_text(f"{show_title} • S{season:02d}E{episode:02d}", 55))}
             </text>
-            <text x="100" y="70" class="episode-info">
+            <text x="95" y="70" class="episode-info">
                 {self._escape_xml(self._truncate_text(episode_title, 30))}
             </text>
             
             <!-- Ecualizador estilo Spotify (solo cuando reproduce) -->
-            {self._generate_enhanced_equalizer_bars(theme, is_playing, 100, 85, extracted_colors, 287)}
+            {self._generate_enhanced_equalizer_bars(theme, is_playing, 95, 56, extracted_colors, 300)}
             
         </svg>
         '''
@@ -417,25 +422,26 @@ class SVGGenerator:
     
     def _generate_enhanced_equalizer_bars(self, theme: Dict[str, Any], is_playing: bool, start_x: int, start_y: int, extracted_colors: Optional[List[Tuple[int, int, int]]] = None, bar_area_width: float = 330) -> str:
         """Genera ecualizador estilo novatorem.svg"""
-        if not is_playing:
-            return f'''
-            <g opacity="0.3">
-                <text x="{start_x}" y="{start_y + 15}" 
-                      style="font-family: {theme['font_family']}; font-size: 12px; fill: {theme['text_color']};">
-                    ⏸️ Pausado
-                </text>
-            </g>
-            '''
+        # Siempre mostrar barras animadas, sin importar el estado
+        # if not is_playing:
+        #     return f'''
+        #     <g opacity="0.3">
+        #         <text x="{start_x}" y="{start_y + 15}" 
+        #               style="font-family: {theme['font_family']}; font-size: 12px; fill: {theme['text_color']};">
+        #             ⏸️ Pausado
+        #         </text>
+        #     </g>
+        #     '''
         
         bars = []
         # Configuración para barras más gruesas
-        bar_width = 3   # Más gruesas (3px)
+        bar_width = 2   # Más delgadas (2px)
         bar_spacing = 1 # Muy juntas
         base_y_fixed = start_y + 25  # LÍNEA BASE FIJA - todas parten de aquí
         
-        # Calcular número de barras para ocupar exactamente 287px
-        pixels_per_bar = bar_width + bar_spacing  # 3px + 1px = 4px por barra
-        bar_count = int(287 // pixels_per_bar)  # 287px ÷ 4px = 71 barras
+        # Calcular número de barras para ocupar exactamente 300px
+        pixels_per_bar = bar_width + bar_spacing  # 2px + 1px = 3px por barra
+        bar_count = int(300 // pixels_per_bar)  # 300px ÷ 3px = 100 barras
         
         # Crear degradado dinámico basado en colores de la carátula
         gradient_id = "barGradient"
@@ -461,7 +467,7 @@ class SVGGenerator:
             elif i % 5 == 0:  # Barras secundarias
                 heights = "2;12;2;12;2;12;2"
             elif i % 3 == 0:  # Barras medias
-                heights = "4;18;4;18;4;18;4"
+                heights = "4;22;4;22;4;22;4"
             else:  # Barras normales
                 heights = "2;10;2;10;2;10;2"
             

@@ -61,7 +61,7 @@ IMGUR_CLIENT_ID=tu-client-id-de-imgur
 # Configuración opcional
 CACHE_DURATION=60
 IMAGE_WIDTH=400
-IMAGE_HEIGHT=150
+IMAGE_HEIGHT=90
 DEFAULT_THEME=default
 
 # Para desarrollo local
@@ -115,7 +115,7 @@ vercel --prod
 | `IMGUR_CLIENT_ID` | Client ID de Imgur | Requerido |
 | `CACHE_DURATION` | Duración del cache en segundos | 60 |
 | `IMAGE_WIDTH` | Ancho de la imagen | 400 |
-| `IMAGE_HEIGHT` | Alto de la imagen | 150 |
+| `IMAGE_HEIGHT` | Alto de la imagen | 90 |
 | `DEFAULT_THEME` | Tema por defecto | default |
 | `DEBUG` | Modo debug | false |
 | `PORT` | Puerto para desarrollo local | 5000 |

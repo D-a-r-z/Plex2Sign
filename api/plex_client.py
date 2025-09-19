@@ -193,6 +193,203 @@ class PlexClient:
             logger.error(f"Error obteniendo sesiones: {e}")
             return None
     
+    def get_recent_playback_history(self, allowed_user: Optional[str] = None, limit: int = 5, offset: int = 0) -> Optional[Dict[str, Any]]:
+        """
+        Obtiene el historial de reproducciones recientes
+        
+        Args:
+            allowed_user: Usuario específico a buscar (opcional)
+            limit: Número máximo de elementos a obtener
+            offset: Desplazamiento para alternar entre canciones (0=primera, 1=segunda, etc.)
+        
+        Returns:
+            Diccionario con información de la reproducción más reciente o None si no hay historial
+        """
+        if not self.plex:
+            logger.error("No hay conexión con Plex")
+            return None
+        
+        try:
+            # Determinar usuario objetivo
+            target_user = None
+            if allowed_user:
+                target_user = allowed_user
+            else:
+                target_user = self._get_token_user()
+                if not target_user:
+                    target_user = os.getenv('PLEX_ALLOWED_USER')
+            
+            if not target_user:
+                logger.warning("No se pudo determinar usuario para historial")
+                return None
+            
+            # Obtener historial de reproducciones recientes
+            # Usar la API de Plex para obtener elementos recientemente reproducidos
+            try:
+                # Obtener elementos recientemente reproducidos (sin filtro de usuario por ahora)
+                # Obtener más elementos para asegurar que tenemos suficientes canciones
+                recent_items = self.plex.history(maxresults=limit * 2)
+                
+                if not recent_items:
+                    logger.info(f"No hay historial de reproducciones para {target_user}")
+                    return None
+                
+                # Buscar elementos de música válidos
+                valid_music_items = []
+                logger.info(f"Revisando {len(recent_items)} elementos del historial...")
+                for i, item in enumerate(recent_items):
+                    title = getattr(item, 'title', '')
+                    item_type = getattr(item, 'type', '')
+                    logger.info(f"Elemento {i+1}: título='{title}', tipo={item_type}, clase={type(item).__name__}")
+                    
+                    # Solo considerar elementos de música (track)
+                    if (item_type == 'track' and 
+                        title and title.strip() and 
+                        title != 'TBA' and title != 'Unknown'):
+                        valid_music_items.append(item)
+                        logger.info(f"Elemento de música válido encontrado: {title}")
+                
+                # Seleccionar elemento según offset
+                if not valid_music_items:
+                    logger.info("No hay elementos válidos en el historial, usando el primero disponible")
+                    recent_item = recent_items[0] if recent_items else None
+                else:
+                    # Usar offset para alternar entre canciones
+                    item_index = offset % len(valid_music_items)
+                    recent_item = valid_music_items[item_index]
+                    logger.info(f"Seleccionando canción {item_index + 1} de {len(valid_music_items)}: {getattr(recent_item, 'title', 'Unknown')}")
+                
+                if not recent_item:
+                    logger.info("No hay elementos en el historial")
+                    return None
+                
+                # Formatear como sesión de música
+                history_data = {
+                    'title': getattr(recent_item, 'title', 'Canción desconocida'),
+                    'type': 'track',  # Asumir música para historial
+                    'state': 'stopped',  # Historial siempre está parado
+                    'user': target_user,
+                    'progress': 0,
+                    'duration': (getattr(recent_item, 'duration', 0) or 0) // 1000 if getattr(recent_item, 'duration', 0) else 0,
+                    'thumb': None,
+                    'art': None,
+                    'year': getattr(recent_item, 'year', None),
+                    'summary': getattr(recent_item, 'summary', ''),
+                }
+                
+                # Información específica de música
+                try:
+                    if hasattr(recent_item, 'artist') and recent_item.artist:
+                        if callable(recent_item.artist):
+                            artist_obj = recent_item.artist()
+                            history_data['artist'] = artist_obj.title if hasattr(artist_obj, 'title') else str(artist_obj)
+                        else:
+                            history_data['artist'] = recent_item.artist.title if hasattr(recent_item.artist, 'title') else str(recent_item.artist)
+                    else:
+                        history_data['artist'] = 'Artista desconocido'
+                except:
+                    history_data['artist'] = 'Artista desconocido'
+                
+                try:
+                    if hasattr(recent_item, 'album') and recent_item.album:
+                        if callable(recent_item.album):
+                            album_obj = recent_item.album()
+                            history_data['album'] = album_obj.title if hasattr(album_obj, 'title') else str(album_obj)
+                        else:
+                            history_data['album'] = recent_item.album.title if hasattr(recent_item.album, 'title') else str(recent_item.album)
+                    else:
+                        history_data['album'] = 'Álbum desconocido'
+                except:
+                    history_data['album'] = 'Álbum desconocido'
+                
+                if hasattr(recent_item, 'trackTitle'):
+                    history_data['track_title'] = recent_item.trackTitle
+                
+                # URLs de imágenes (para música usar art, no thumb)
+                logger.info(f"Campos de imagen disponibles: art={getattr(recent_item, 'art', None)}, thumb={getattr(recent_item, 'thumb', None)}")
+                
+                # Para música, siempre intentar obtener la imagen del álbum primero
+                album_image_found = False
+                try:
+                    if hasattr(recent_item, 'album') and recent_item.album:
+                        album_obj = recent_item.album() if callable(recent_item.album) else recent_item.album
+                        logger.info(f"Objeto álbum: {album_obj}")
+                        if hasattr(album_obj, 'thumb') and album_obj.thumb:
+                            history_data['thumb'] = f"{self.base_url}{album_obj.thumb}?X-Plex-Token={self.token}"
+                            history_data['art'] = history_data['thumb']  # Para música, art = thumb
+                            album_image_found = True
+                            logger.info(f"Portada del álbum encontrada: {album_obj.thumb}")
+                        elif hasattr(album_obj, 'art') and album_obj.art:
+                            history_data['art'] = f"{self.base_url}{album_obj.art}?X-Plex-Token={self.token}"
+                            history_data['thumb'] = history_data['art']
+                            album_image_found = True
+                            logger.info(f"Imagen del álbum encontrada: {album_obj.art}")
+                except Exception as e:
+                    logger.warning(f"Error obteniendo imagen del álbum: {e}")
+                
+                if not album_image_found and hasattr(recent_item, 'art') and recent_item.art:
+                    history_data['art'] = f"{self.base_url}{recent_item.art}?X-Plex-Token={self.token}"
+                    history_data['thumb'] = history_data['art']  # Para música, thumb = art
+                elif not album_image_found and hasattr(recent_item, 'thumb') and recent_item.thumb:
+                    # Solo usar thumb si no se encontró imagen del álbum
+                    thumb_url = recent_item.thumb
+                    if not thumb_url.startswith('http'):
+                        thumb_url = f"{self.base_url}{thumb_url}"
+                    if 'X-Plex-Token=' not in thumb_url:
+                        thumb_url += f"?X-Plex-Token={self.token}"
+                    history_data['thumb'] = thumb_url
+                    logger.info(f"URL del thumbnail generada: {thumb_url}")
+                elif not album_image_found:
+                    logger.info("No se encontró imagen del álbum, usando fallback")
+                
+                logger.info(f"Historial encontrado para {target_user}: {history_data['title']} - {history_data['artist']}")
+                return history_data
+                
+            except Exception as e:
+                logger.warning(f"Error obteniendo historial específico del usuario: {e}")
+                
+                # Fallback: obtener historial general
+                try:
+                    recent_items = self.plex.history(maxresults=limit)
+                    
+                    if not recent_items:
+                        logger.info("No hay historial de reproducciones disponible")
+                        return None
+                    
+                    # Tomar el elemento más reciente
+                    recent_item = recent_items[0]
+                    
+                    # Formatear como sesión de música
+                    history_data = {
+                        'title': getattr(recent_item, 'title', 'Canción desconocida'),
+                        'type': 'track',
+                        'state': 'stopped',
+                        'user': 'Unknown',
+                        'progress': 0,
+                        'duration': (getattr(recent_item, 'duration', 0) or 0) // 1000,
+                        'thumb': None,
+                        'art': None,
+                        'year': getattr(recent_item, 'year', None),
+                        'summary': getattr(recent_item, 'summary', ''),
+                        'artist': 'Artista desconocido',
+                        'album': 'Álbum desconocido',
+                    }
+                    
+                    # URLs de imágenes
+                    if hasattr(recent_item, 'thumb') and recent_item.thumb:
+                        history_data['thumb'] = f"{self.base_url}{recent_item.thumb}?X-Plex-Token={self.token}"
+                    
+                    logger.info(f"Historial general encontrado: {history_data['title']}")
+                    return history_data
+                    
+                except Exception as e2:
+                    logger.error(f"Error obteniendo historial general: {e2}")
+                    return None
+            
+        except Exception as e:
+            logger.error(f"Error inesperado obteniendo historial: {e}")
+            return None
+    
     def _format_session_data(self, session) -> Dict[str, Any]:
         """
         Formatea los datos de la sesión para uso interno

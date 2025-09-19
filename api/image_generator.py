@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class ImageGenerator:
     """Generador de imágenes PNG renderizando desde SVG"""
     
-    def __init__(self, theme: str = 'normal', width: int = 400, height: int = 150):
+    def __init__(self, theme: str = 'normal', width: int = 400, height: int = 90):
         """
         Inicializa el generador de imágenes
         
@@ -63,7 +63,12 @@ class ImageGenerator:
             img = Image.new('RGBA', (self.width, self.height), (255, 255, 255, 0))
             draw = ImageDraw.Draw(img)
             
-            if not session_data or session_data.get('state') == 'stopped':
+            # Si es historial (state='stopped'), mostrarlo como música
+            if session_data and session_data.get('state') == 'stopped' and session_data.get('type') == 'track':
+                # Continuar con la generación normal (es música del historial)
+                pass
+            elif not session_data:
+                logger.info("PNG: session_data es None, generando PNG idle")
                 return self._generate_idle_png(draw)
             
             # Obtener tema
@@ -217,7 +222,7 @@ class ImageGenerator:
     def _generate_idle_png(self, draw) -> io.BytesIO:
         """Genera PNG cuando no hay reproducción"""
         try:
-            from PIL import Image, ImageFont
+            from PIL import Image, ImageDraw, ImageFont
             
             # Crear imagen
             img = Image.new('RGBA', (self.width, self.height), (255, 255, 255, 0))

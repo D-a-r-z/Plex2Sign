@@ -51,7 +51,7 @@ def index():
                 background: #0d1117; color: #f0f6fc;
             }
             .card { 
-                background: #161b22; border-radius: 8px; padding: 15px; margin: 15px 0;
+                background: #161b22; border-radius: 8px; padding: 15px; margin: 8px 0;
                 border: 1px solid #30363d;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.3);
             }
@@ -62,7 +62,13 @@ def index():
             code { background: #21262d; padding: 2px 4px; border-radius: 3px; color: #f0f6fc; font-size: 0.9em; }
             a { color: #58a6ff; text-decoration: none; }
             a:hover { text-decoration: underline; }
-            img { max-width: 100%; border-radius: 6px; }
+            img { 
+                max-width: 100%; 
+                border-radius: 6px; 
+                border: 1px solid #ddd; 
+                margin: 1px 0;
+                padding: 1px;
+            }
         </style>
     </head>
     <body>
@@ -84,28 +90,28 @@ def index():
             <h2>🎨 Formatos Disponibles</h2>
             
             <h3>SVG (Animado)</h3>
-            <div style="margin: 10px 0;">
-                <p><strong>Normal SVG</strong> - Con ecualizador animado</p>
-                <img src="/api/now-playing-svg?theme=normal" alt="Normal SVG" style="border: 1px solid #ddd; border-radius: 8px; max-width: 400px;" />
-                <br><small><a href="/api/now-playing-svg?theme=normal">Ver enlace directo</a></small>
+            <div style="margin: 2px 0;">
+                <p style="margin: 2px 0;"><strong>Normal SVG</strong> - Con ecualizador animado</p>
+                <img src="/api/now-playing-svg?theme=normal&height=90" alt="Normal SVG" style="max-width: 400px;" />
+                <br><small><a href="/api/now-playing-svg?theme=normal&height=90">Ver enlace directo</a></small>
             </div>
             
-            <div style="margin: 10px 0;">
-                <p><strong>Dark SVG</strong> - Tema oscuro con ecualizador animado</p>
-                <img src="/api/now-playing-svg?theme=dark" alt="Dark SVG" style="border: 1px solid #ddd; border-radius: 8px; max-width: 400px;" />
-                <br><small><a href="/api/now-playing-svg?theme=dark">Ver enlace directo</a></small>
+            <div style="margin: 2px 0;">
+                <p style="margin: 2px 0;"><strong>Dark SVG</strong> - Tema oscuro con ecualizador animado</p>
+                <img src="/api/now-playing-svg?theme=dark&height=90" alt="Dark SVG" style="max-width: 400px;" />
+                <br><small><a href="/api/now-playing-svg?theme=dark&height=90">Ver enlace directo</a></small>
             </div>
             
             <h3>PNG (Estático)</h3>
-            <div style="margin: 10px 0;">
-                <p><strong>Normal PNG</strong> - Diseño limpio con fondo blanco</p>
-                <img src="/api/now-playing-png?theme=normal" alt="Normal PNG" style="border: 1px solid #ddd; border-radius: 8px; max-width: 400px;" />
+            <div style="margin: 2px 0;">
+                <p style="margin: 2px 0;"><strong>Normal PNG</strong> - Diseño limpio con fondo blanco</p>
+                <img src="/api/now-playing-png?theme=normal" alt="Normal PNG" style="max-width: 400px;" />
                 <br><small><a href="/api/now-playing-png?theme=normal">Ver enlace directo</a></small>
             </div>
             
-            <div style="margin: 10px 0;">
-                <p><strong>Dark PNG</strong> - Tema oscuro para foros claros y oscuros</p>
-                <img src="/api/now-playing-png?theme=dark" alt="Dark PNG" style="border: 1px solid #ddd; border-radius: 8px; max-width: 400px;" />
+            <div style="margin: 2px 0;">
+                <p style="margin: 2px 0;"><strong>Dark PNG</strong> - Tema oscuro para foros claros y oscuros</p>
+                <img src="/api/now-playing-png?theme=dark" alt="Dark PNG" style="max-width: 400px;" />
                 <br><small><a href="/api/now-playing-png?theme=dark">Ver enlace directo</a></small>
             </div>
             
@@ -200,7 +206,7 @@ def api_now_playing():
         # Parámetros de la petición
         theme = request.args.get('theme', os.getenv('DEFAULT_THEME', 'normal'))
         width = int(request.args.get('width', os.getenv('IMAGE_WIDTH', 400)))
-        height = int(request.args.get('height', os.getenv('IMAGE_HEIGHT', 150)))
+        height = int(request.args.get('height', os.getenv('IMAGE_HEIGHT', 90)))
         force_refresh = request.args.get('refresh', 'false').lower() == 'true'
         
         # Verificar cache
@@ -225,6 +231,24 @@ def api_now_playing():
         allowed_user = request.args.get('user')
         session_data = plex_client.get_current_session(allowed_user)
         logger.info(f"Datos de sesión obtenidos: {session_data}")
+        
+        # Si no hay sesión activa, intentar usar historial o caché
+        if not session_data:
+            # Primero intentar obtener historial de reproducciones
+            # Usar timestamp para alternar entre canciones cada 30 segundos
+            import time
+            offset = int(time.time() // 30) % 5  # Alternar entre 0-4 cada 30 segundos
+            history_data = plex_client.get_recent_playback_history(allowed_user, limit=10, offset=offset)
+            logger.info(f"PNG: Historial obtenido: {history_data}")
+            if history_data:
+                logger.info("No hay sesión activa, usando historial de reproducciones")
+                session_data = history_data
+            elif image_cache['image_url'] and image_cache['session_data']:
+                logger.info("No hay sesión activa, usando imagen desde cache")
+                return f'<img src="{image_cache["image_url"]}" alt="Plex2Sign" />', 200, {'Content-Type': 'text/html'}
+            else:
+                logger.info("No hay sesión activa, historial ni cache, generando imagen de 'sin actividad'")
+                session_data = None
         
         # Generar imagen
         image_generator = ImageGenerator(width, height, theme)
@@ -262,7 +286,7 @@ def api_now_playing():
 def generate_error_image(message: str) -> Response:
     """Genera imagen de error"""
     try:
-        image_generator = ImageGenerator(400, 150, 'default')
+        image_generator = ImageGenerator(400, 90, 'default')
         error_data = {
             'title': message,
             'type': 'error',
@@ -280,7 +304,7 @@ def generate_error_svg(message: str) -> Response:
     """Genera SVG de error"""
     try:
         svg_content = f'''
-        <svg width="400" height="150" xmlns="http://www.w3.org/2000/svg">
+        <svg width="400" height="90" xmlns="http://www.w3.org/2000/svg">
             <defs>
                 <style>
                     .error-text {{
@@ -307,7 +331,7 @@ def api_now_playing_svg():
         # Parámetros de la petición
         theme = request.args.get('theme', os.getenv('DEFAULT_THEME', 'normal'))
         width = int(request.args.get('width', os.getenv('IMAGE_WIDTH', 400)))
-        height = int(request.args.get('height', os.getenv('IMAGE_HEIGHT', 150)))
+        height = int(request.args.get('height', os.getenv('IMAGE_HEIGHT', 90)))
         
         # Obtener datos de Plex
         token = request.args.get('token')
@@ -321,6 +345,23 @@ def api_now_playing_svg():
         session_data = plex_client.get_current_session(allowed_user)
         logger.info(f"Datos de sesión obtenidos para SVG: {session_data}")
         
+        # Si no hay sesión activa, intentar usar historial o caché
+        if not session_data:
+            # Primero intentar obtener historial de reproducciones
+            # Usar timestamp para alternar entre canciones cada 30 segundos
+            import time
+            offset = int(time.time() // 30) % 5  # Alternar entre 0-4 cada 30 segundos
+            history_data = plex_client.get_recent_playback_history(allowed_user, limit=10, offset=offset)
+            logger.info(f"Historial obtenido: {history_data}")
+            if history_data:
+                logger.info("No hay sesión activa, usando historial de reproducciones para SVG")
+                session_data = history_data
+            elif image_cache['image_url'] and image_cache['session_data']:
+                logger.info("No hay sesión activa, usando imagen desde cache")
+                return f'<img src="{image_cache["image_url"]}" alt="Plex2Sign" />', 200, {'Content-Type': 'text/html'}
+            else:
+                logger.info("No hay sesión activa, historial ni cache, generando SVG de 'sin actividad'")
+                session_data = None
         
         # Generar SVG
         svg_generator = SVGGenerator(width, height, theme)
@@ -341,7 +382,7 @@ def api_now_playing_png():
         # Parámetros de la petición
         theme = request.args.get('theme', os.getenv('DEFAULT_THEME', 'normal'))
         width = int(request.args.get('width', os.getenv('IMAGE_WIDTH', 400)))
-        height = int(request.args.get('height', os.getenv('IMAGE_HEIGHT', 150)))
+        height = int(request.args.get('height', os.getenv('IMAGE_HEIGHT', 90)))
         
         # Obtener cliente Plex
         token = request.args.get('token')
@@ -353,17 +394,25 @@ def api_now_playing_png():
         # Obtener sesión actual
         allowed_user = request.args.get('user')
         session_data = plex_client.get_current_session(allowed_user)
+        logger.info(f"Datos de sesión obtenidos para PNG: {session_data}")
+        
+        # Si no hay sesión activa, intentar usar historial o caché
         if not session_data:
-            logger.info("No hay sesión activa")
-            # Generar imagen de "no reproduciendo"
-            session_data = {
-                'title': 'Sin contenido',
-                'type': 'none',
-                'state': 'stopped',
-                'user': 'Unknown',
-                'progress': 0,
-                'duration': 0,
-            }
+            # Primero intentar obtener historial de reproducciones
+            # Usar timestamp para alternar entre canciones cada 30 segundos
+            import time
+            offset = int(time.time() // 30) % 5  # Alternar entre 0-4 cada 30 segundos
+            history_data = plex_client.get_recent_playback_history(allowed_user, limit=10, offset=offset)
+            logger.info(f"PNG: Historial obtenido: {history_data}")
+            if history_data:
+                logger.info("No hay sesión activa, usando historial de reproducciones para PNG")
+                session_data = history_data
+            elif image_cache['image_url'] and image_cache['session_data']:
+                logger.info("No hay sesión activa, usando imagen desde cache")
+                return f'<img src="{image_cache["image_url"]}" alt="Plex2Sign" />', 200, {'Content-Type': 'text/html'}
+            else:
+                logger.info("No hay sesión activa, historial ni cache, generando PNG de 'sin actividad'")
+                session_data = None
         
         # Generar imagen PNG
         image_generator = ImageGenerator(theme=theme, width=width, height=height)
